@@ -1,4 +1,5 @@
 from typing import Callable, List, TypeVar, Tuple
+import json
 import os
 import numpy as np
 
@@ -23,20 +24,21 @@ def sigmoid(logit: np.ndarray):
     return 1 / (1 + np.exp(-logit))
 
 
-def load_results_asvspoof(path: str) -> List[Tuple[str, str, float]]:
-    def parse_line(line: str):
-        filename, _, label, score = line.split()
-        score = float(score)
-        label = "real" if label == "bonafide" else "fake"
-        return filename, label, score
-
-    return read_file(path, parse_line)
-
-
 def cache_np(path, func, *args, **kwargs):
     if os.path.exists(path):
         return np.load(path)
     else:
         result = func(*args, **kwargs)
         np.save(path, result)
+        return result
+
+
+def cache_json(path, func, *args, **kwargs):
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        result = func(*args, **kwargs)
+        with open(path, "w") as f:
+            json.dump(result, f)
         return result
