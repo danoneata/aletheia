@@ -1,0 +1,5 @@
+__pycache__
+*egg-info
+output
+wandb
+timnet/OUTPUT_MODELS
