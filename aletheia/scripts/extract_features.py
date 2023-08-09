@@ -44,6 +44,15 @@ FEATURE_EXTRACTORS = {
     "wav2vec2-base": lambda: HuggingFaceFeatureExtractor(
         Wav2Vec2Model, "facebook/wav2vec2-base"
     ),
+    "wav2vec2-large": lambda: HuggingFaceFeatureExtractor(
+        Wav2Vec2Model, "facebook/wav2vec2-large"
+    ),
+    "wav2vec2-large-robust": lambda: HuggingFaceFeatureExtractor(
+        Wav2Vec2Model, "facebook/wav2vec2-large-robust"
+    ),
+    "wav2vec2-large-xlsr-53": lambda: HuggingFaceFeatureExtractor(
+        Wav2Vec2Model, "facebook/wav2vec2-large-xlsr-53"
+    ),
     "wav2vec2-xls-r-300m": lambda: HuggingFaceFeatureExtractor(
         Wav2Vec2Model, "facebook/wav2vec2-xls-r-300m"
     ),
