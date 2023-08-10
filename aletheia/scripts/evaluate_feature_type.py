@@ -19,7 +19,12 @@ def main():
     SPLITS = ["train", "dev"]
     FEATURE_TYPES = [
         "wav2vec2-large",
+        "wav2vec2-large-lv60",
+        "wav2vec2-large-robust",
+        "wav2vec2-large-xlsr-53",
         "wav2vec2-xls-r-300m",
+        "wav2vec2-xls-r-1b",
+        "wav2vec2-xls-r-2b",
     ]
     NUM_SAMPLES = 4000
     SEEDS = [0, 1, 2]
@@ -39,7 +44,7 @@ def main():
         ]
 
     def get_cache_path(feature_type, seed):
-        return f"output/results/pretraining-datasets-{feature_type}-{seed}.json"
+        return f"output/results/feature-type-{feature_type}-{seed}.json"
 
     results = [
         merge(
@@ -63,13 +68,20 @@ def main():
     df = df.groupby(["feature-type", "te-dataset"])
     df = df.agg({"eer": ["mean", "std"], "ece": ["mean", "std"]})
 
+    print(df)
+
+    # prepare for LaTeX
+
     to_str_1 = lambda x: f"{x:.1f}"
-    to_str_m = lambda m: df[(m, "mean")].map(to_str_1) + "±" + df[(m, "std")].map(to_str_1)
+    to_str_m = lambda m: r"\resstd{" + df[(m, "mean")].map(to_str_1) + "}{" + df[(m, "std")].map(to_str_1) + "}"
 
     df["eer-str"] = to_str_m("eer")
     df["ece-str"] = to_str_m("ece")
 
-    print(df)
+    df = df.drop(columns=[("eer", "mean"), ("eer", "std"), ("ece", "mean"), ("ece", "std")])
+    df = df.reset_index()
+    df = df.pivot(index=["feature-type"], columns=["te-dataset"], values=["eer-str", "ece-str"])
+    print(df.to_latex(escape=False))
 
 
 if __name__ == "__main__":
