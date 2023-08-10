@@ -44,7 +44,7 @@ def evaluate(tr_datasets, verbose=False):
             "subset": "all",
         }
         for dataset in ["asvspoof19", "in-the-wild"]
-    ][1:]
+    ]
 
     data = [load_data_npz(**d) for d in tr_datasets]
     Xs_tr, ys_tr = zip(*data)
