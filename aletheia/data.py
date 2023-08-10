@@ -1,9 +1,13 @@
-from typing import List, Literal
+from abc import ABC, abstractmethod
+from typing import List, Literal, Optional
 from pathlib import Path
 
 from dataclasses import dataclass
+from functools import partial
 
 import soundfile as sf
+
+from datasets import load_dataset, concatenate_datasets, Dataset as HuggingFaceDataset
 
 from aletheia.utils import read_file
 
@@ -13,15 +17,36 @@ Split = Literal["train", "dev", "eval"]
 
 SAMPLING_RATE = 16_000
 
+class MyDataset(ABC):
+    def __init__(self, split):
+        self.split = split
+
+    @abstractmethod
+    def __len__(self) -> int:
+        pass
+
+    @abstractmethod
+    def get_file_name(self, i: int) -> str:
+        pass
+
+    @abstractmethod
+    def get_label(self, i: int) -> Label:
+        pass
+
+    @abstractmethod
+    def load_audio(self, i: int):
+        pass
+
+
 @dataclass
 class Datum:
     filename: str
     label: Label
-    system: str
-    speaker: str
+    system: Optional[str]
+    speaker: Optional[str]
 
 
-class ASVspoof2019:
+class ASVspoof2019(MyDataset):
     def __init__(self, split: Split):
         self.base_path = Path("/mnt/student-share/ASVspoof2019/LA")
         self.split = split
@@ -49,22 +74,25 @@ class ASVspoof2019:
         path = str(path)
         return read_file(path, parse_line)
 
-    def __getitem__(self, i: int) -> Datum:
-        if i >= len(self):
-            raise IndexError
-        return self.data[i]
+    # def __getitem__(self, i: int) -> Datum:
+    #     if i >= len(self):
+    #         raise IndexError
+    #     return self.data[i]
 
     def __len__(self) -> int:
         return len(self.data)
 
-    def get_path_audio(self, datum: Datum) -> Path:
-        return self.get_folder_data() / (datum.filename + "." + self.ext)
+    def get_file_name(self, i: int) -> str:
+        return self.data[i].filename
 
-    def get_label(self, datum: Datum) -> Label:
-        return datum.label
+    def get_label(self, i: int) -> Label:
+        return self.data[i].label
 
-    def load_audio(self, datum: Datum):
-        audio_path = self.get_path_audio(datum)
+    def get_path_audio(self, i: int) -> Path:
+        return self.get_folder_data() / (self.get_file_name(i) + "." + self.ext)
+
+    def load_audio(self, i: int):
+        audio_path = self.get_path_audio(i)
         audio, sr = sf.read(audio_path)
         assert sr == SAMPLING_RATE
         return audio
@@ -85,7 +113,73 @@ class InTheWild(ASVspoof2019):
         return datum.label
 
 
+class HuggingFaceRealDataset(MyDataset):
+    @property
+    @abstractmethod
+    def dataset(self) -> HuggingFaceDataset:
+        pass
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def get_file_name(self, i: int) -> str:
+        return self.dataset[i]["id"]
+
+    def get_label(self, i: int) -> Label:
+        return "real"
+
+    def load_audio(self, i: int):
+        audio_dict = self.dataset[i]["audio"]
+        assert audio_dict["sampling_rate"] == SAMPLING_RATE
+        return audio_dict["array"]
+
+
+# class ESBDataset(HuggingFaceRealDataset):
+#     def __init__(self, name, split: Split):
+#         SPLIT_MAP = {
+#             "train": "train",
+#             "dev": "validation",
+#             "eval": "test",
+#         }
+#         split_esb = SPLIT_MAP[split]
+#         if name == "librispeech" and split in {"dev", "eval"}:
+#             split_esb = split_esb + ".other"
+#         self.data = load_dataset("esb/datasets", name, split=split_esb, use_auth_token=True)
+#         import pdb; pdb.set_trace()
+
+
+class ESBDiagnosticDataset(HuggingFaceRealDataset):
+    def __init__(self, name, split: Split):
+        self.name = name
+        print(name)
+        self.split = split
+        assert split == "dev"
+
+    @property
+    def dataset(self):
+        dataset = load_dataset("esb/diagnostic-dataset", self.name, use_auth_token=True)
+        if isinstance(dataset, dict):
+            datasets = list(dataset.values())
+            dataset = concatenate_datasets(datasets)
+        return dataset
+
+
 DATASETS = {
     "asvspoof19": ASVspoof2019,
     "in-the-wild": InTheWild,
-}
+}  # type: dict[str, type[MyDataset]]
+
+ESB_DATASETS = [
+    "librispeech",
+    "common_voice",
+    "voxpopuli",
+    "tedlium",
+    "gigaspeech",
+    "spgispeech",
+    "earnings22",
+    "ami",
+]
+
+for name in ESB_DATASETS:
+    my_name = name.replace("_", "-")
+    DATASETS[my_name] = partial(ESBDiagnosticDataset, name=name)

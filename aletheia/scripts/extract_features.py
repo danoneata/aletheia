@@ -107,8 +107,7 @@ def main(
     dataset = DATASETS[dataset_name](split=split)
     feature_extractor = FEATURE_EXTRACTORS[feature_type]()
 
-    def extract1(datum):
-        audio = dataset.load_audio(datum)
+    def extract1(audio):
         feature = feature_extractor(audio, sr=SAMPLING_RATE)
         feature = feature.squeeze(dim=0).mean(dim=0)
         feature = feature.cpu().numpy()
@@ -121,13 +120,12 @@ def main(
 
     with h5py.File(path_hdf5, "a") as f:
         for i in tqdm(indices):
-            datum = dataset[i]
             try:
-                group = f.create_group(datum.filename)
+                group = f.create_group(dataset.get_file_name(i))
             except ValueError:
                 continue
-            feature = extract1(datum)
-            label_np = np.array(datum.label == "fake", dtype=np.int32)
+            feature = extract1(dataset.load_audio(i))
+            label_np = np.array(dataset.get_label(i) == "fake", dtype=np.int32)
             index_np = np.array(i, dtype=np.int32)
             group.create_dataset("feature", data=feature)
             group.create_dataset("label", data=label_np)
@@ -143,8 +141,8 @@ def main(
         y = np.zeros(num_samples)
 
         for i, index in enumerate(tqdm(indices)):
-            datum = dataset[index]
-            group = f[datum.filename]
+            filename = dataset.get_file_name(index)
+            group = f[filename]
             X[i] = np.array(group["feature"])
             y[i] = np.array(group["label"])
 
