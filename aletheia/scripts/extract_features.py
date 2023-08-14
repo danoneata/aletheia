@@ -65,6 +65,9 @@ FEATURE_EXTRACTORS = {
     "wav2vec2-xls-r-2b": lambda: HuggingFaceFeatureExtractor(
         Wav2Vec2Model, "facebook/wav2vec2-xls-r-2b"
     ),
+    "wavlm-base": lambda: HuggingFaceFeatureExtractor(
+        WavLMModel, "microsoft/wavlm-base"
+    ),
     "wavlm-base-sv": lambda: HuggingFaceFeatureExtractor(
         WavLMModel, "microsoft/wavlm-base-sv"
     ),
