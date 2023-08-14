@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 from pathlib import Path
 
 from dataclasses import dataclass
-from functools import partial
+from functools import cached_property, partial
 
 import soundfile as sf
 
@@ -155,7 +155,7 @@ class ESBDiagnosticDataset(HuggingFaceRealDataset):
         self.split = split
         assert split == "dev"
 
-    @property
+    @cached_property
     def dataset(self):
         dataset = load_dataset("esb/diagnostic-dataset", self.name, use_auth_token=True)
         if isinstance(dataset, dict):
