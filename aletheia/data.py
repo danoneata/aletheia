@@ -106,12 +106,6 @@ class InTheWild(ASVspoof2019):
         self.ext = "wav"
         self.data = self.load_data()
 
-    def get_path_audio(self, datum: Datum) -> Path:
-        return self.get_folder_data() / (datum.filename + "." + self.ext)
-
-    def get_label(self, datum: Datum) -> Label:
-        return datum.label
-
 
 class HuggingFaceRealDataset(MyDataset):
     @property
