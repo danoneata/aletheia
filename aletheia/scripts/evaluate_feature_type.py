@@ -30,40 +30,49 @@ def main():
         "wavlm-base-plus",
         "wavlm-large",
     ]
-    NUM_SAMPLES = 4000
-    SEEDS = [0, 1, 2]
+    # NUM_SAMPLES = 4000
+    # SEEDS = [0, 1, 2]
+    # SUBSETS = [f"{NUM_SAMPLES}-{seed}" for seed in SEEDS]
+    SUBSETS = ["all"]
 
-    def get_tr_dataset(*, split, feature_type, seed):
+    def get_seed(subset):
+        if subset == "all":
+            return 0
+        else:
+            _, seed = subset.split("-")
+            return int(seed)
+
+    def get_tr_dataset(split, feature_type, subset):
         return {
             "dataset_name": DATASET_NAME,
             "split": split,
             "feature_type": feature_type,
-            "subset": f"{NUM_SAMPLES}-{seed}",
+            "subset": subset,
         }
 
-    def get_tr_datasets(*, feature_type, seed):
+    def get_tr_datasets(feature_type, subset):
         return [
-            get_tr_dataset(split=split, feature_type=feature_type, seed=seed)
+            get_tr_dataset(split, feature_type, subset)
             for split in SPLITS
         ]
 
-    def get_cache_path(feature_type, seed):
-        return f"output/results/feature-type-{feature_type}-{seed}.json"
+    def get_cache_path(feature_type, subset):
+        return f"output/results/feature-type-{feature_type}-{subset}.json"
 
     results = [
         merge(
             result,
             {
                 "feature-type": feature_type,
-                "seed": seed,
+                "seed": get_seed(subset),
             },
         )
         for feature_type in FEATURE_TYPES
-        for seed in SEEDS
+        for subset in SUBSETS
         for result in cache_json(
-            get_cache_path(feature_type, seed),
+            get_cache_path(feature_type, subset),
             evaluate,
-            get_tr_datasets(feature_type=feature_type, seed=seed),
+            get_tr_datasets(feature_type, subset),
             verbose=True,
         )
     ]
@@ -77,7 +86,8 @@ def main():
     # prepare for LaTeX
 
     to_str_1 = lambda x: f"{x:.1f}"
-    to_str_m = lambda m: r"\resstd{" + df[(m, "mean")].map(to_str_1) + "}{" + df[(m, "std")].map(to_str_1) + "}"
+    # to_str_m = lambda m: r"\resstd{" + df[(m, "mean")].map(to_str_1) + "}{" + df[(m, "std")].map(to_str_1) + "}"
+    to_str_m = lambda m: df[(m, "mean")].map(to_str_1)
 
     df["eer-str"] = to_str_m("eer")
     df["ece-str"] = to_str_m("ece")
