@@ -117,6 +117,16 @@ def main():
     df = pd.DataFrame(results)
     st.dataframe(df)
 
+    idxs1 = df["te-dataset"] == "in-the-wild"
+    idxs2 = df["num-asvspoof"] == 50_760
+    idxs = idxs1 & idxs2
+    df_ss = df[idxs]
+    df_ss = df_ss.drop(columns=["te-dataset", "num-asvspoof", "seed"])
+    df_ss = df_ss.reset_index(drop=True)
+    df_ss = df_ss.T
+    st.dataframe(df_ss)
+    st.code(df_ss.to_latex(float_format="%.1f"))
+
     DATATASET_SHOW_NAMES = {
         "asvspoof19": "ASVspoof'19",
         "in-the-wild": "In the Wild",
