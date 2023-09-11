@@ -33,4 +33,19 @@ for split in train valid; do
 done
 ```
 
-## Train and evaluate linear model
+## Train and evaluate model
+
+Table 2 in paper:
+```bash
+python aletheia/scripts/evaluate_feature_type.py
+```
+
+Figure 1 in  paper:
+```bash
+streamlit run aletheia/scripts/plot_num_training_samples.py
+```
+
+Figure 2 (uncertainty estimation and reliability) in paper:
+```bash
+streamlit run aletheia/scripts/evaluate_reliability_ours_vs_salvi.py
+```
