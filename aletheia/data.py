@@ -37,6 +37,9 @@ class MyDataset(ABC):
     def load_audio(self, i: int):
         pass
 
+    def get_system(self, i: int) -> Optional[str]:
+        return None
+
 
 @dataclass
 class Datum:
@@ -90,6 +93,9 @@ class ASVspoof2019(MyDataset):
 
     def get_path_audio(self, i: int) -> Path:
         return self.get_folder_data() / (self.get_file_name(i) + "." + self.ext)
+
+    def get_system(self, i: int) -> Optional[str]:
+        return self.data[i].system
 
     def load_audio(self, i: int):
         audio_path = self.get_path_audio(i)
