@@ -18,11 +18,12 @@ from aletheia.scripts.evaluate_reliability import (
     evaluate_reliability,
     get_reliability_metrics,
     select_only_fakes,
+    plot_hists_reliab,
     predict,
 )
 
 
-SUBSET_FUNC = select_only_fakes
+# SUBSET_FUNC = select_only_fakes
 SUBSET_FUNC = None
 
 
@@ -54,7 +55,9 @@ def load_ours():
             }
             for output in outputs
             for metric in get_reliability_metrics(
-                output, entropy_normed, subset_func=SUBSET_FUNC,
+                output,
+                entropy_normed,
+                subset_func=SUBSET_FUNC,
             )
         ]
     )
@@ -117,7 +120,9 @@ def load_salvi():
                 **metric,
             }
             for dataset_name in ["asvspoof19", "in-the-wild"]
-            for metric in get_reliability_metrics(load_data(dataset_name), subset_func=SUBSET_FUNC)
+            for metric in get_reliability_metrics(
+                load_data(dataset_name), subset_func=SUBSET_FUNC
+            )
         ]
     )
 
@@ -142,7 +147,7 @@ def load_salvi_orig():
         df = pd.read_csv(path, index_col=0, converters=CONVERTERS)
 
         df["reliab"] = 1 - df["reliab"]
-        df["score"] = - df["score"]
+        df["score"] = -df["score"]
 
         df["reliability"] = df["reliab"].map(lambda xs: xs.max())
         df["pred"] = df.apply(compute_score, axis=1)
@@ -152,6 +157,8 @@ def load_salvi_orig():
     def get_reliability_metrics(output, subset_func):
         df = output.copy()
         df["pred-binary"] = df["pred"] > 0.5
+
+        plot_hists_reliab(df)
 
         return [
             {
@@ -171,7 +178,9 @@ def load_salvi_orig():
                 **metric,
             }
             for dataset_name in ["asvspoof19", "in-the-wild"]
-            for metric in get_reliability_metrics(load_data(dataset_name), subset_func=SUBSET_FUNC)
+            for metric in get_reliability_metrics(
+                load_data(dataset_name), subset_func=SUBSET_FUNC
+            )
         ]
     )
 
@@ -203,12 +212,14 @@ def main():
     }
 
     METHOD_SHOW_NAMES = {
-        "ours": "Ours",   
-        "salvi-orig": "Salvi et al.", 
-        "salvi": "Salvi et al. (ours)", 
+        "ours": "Ours",
+        "salvi-orig": "Salvi et al.",
+        "salvi": "Salvi et al. (ours)",
     }
 
-    df = df.replace({"dataset-name": DATATASET_SHOW_NAMES, "method-name": METHOD_SHOW_NAMES})
+    df = df.replace(
+        {"dataset-name": DATATASET_SHOW_NAMES, "method-name": METHOD_SHOW_NAMES}
+    )
     df = df.rename(columns={"method-name": "Method"})
 
     fig = sns.relplot(
