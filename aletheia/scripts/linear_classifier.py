@@ -4,14 +4,22 @@ import numpy as np
 
 from sklearn.linear_model import LogisticRegression
 
+from aletheia.data import DATASETS
 from aletheia.metrics import compute_eer, compute_ece
 
 
-def load_data_npz(dataset_name, split, feature_type, subset):
+def load_data_npz(dataset_name, split, feature_type, subset, systems=None):
     path = f"output/features/{dataset_name}-{split}-{feature_type}-{subset}.h5.npz"
     with np.load(path) as f:
         X = f["X"]
         y = f["y"]
+    if systems is not None:
+        assert subset == "all"
+        assert systems != []
+        dataset = DATASETS[dataset_name](split=split)
+        indices = [i for i in range(len(dataset)) if dataset.get_system(i) in systems]
+        X = X[indices]
+        y = y[indices]
     return X, y
 
 
