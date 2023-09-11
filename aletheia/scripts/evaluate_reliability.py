@@ -6,11 +6,15 @@ import seaborn as sns
 import streamlit as st
 
 from matplotlib import pyplot as plt
+from sklearn.metrics import roc_auc_score
 
 from aletheia.scripts.linear_classifier import predict, evaluate1
 from aletheia.utils import cache_json
 
 sns.set_context("talk")
+
+
+δ = 0.01
 
 
 def entropy_normed(x):
@@ -26,31 +30,72 @@ def max_normed(x):
     return 2 * (np.maximum(x, 1 - x) - 0.5)
 
 
-def get_reliability_metrics(output, func, subset_func=None):
-    df = pd.DataFrame({"pred": output["pred"], "true": output["true"]})
-    df["reliability"] = df["pred"].map(func)
+
+select_only_fakes = lambda df: df[df["true"] == 1]
+
+
+def evaluate_reliability(df, subset_func=None, τ=0.5):
     if subset_func:
         # evaluate only on fake samples as Salvi et al.
         df = subset_func(df)
+
+    idxs = df["reliability"] >= τ
+
+    pred_binary = df[idxs]["pred-binary"]
+    pred = df[idxs]["pred"]
+    true = df[idxs]["true"]
+    accuracy = np.mean(true == pred_binary)
+
+    num_kept = sum(idxs)
     num_samples = len(df)
+    frac_kept = num_kept / num_samples
 
-    def evaluate_reliability(τ):
-        idxs = df["reliability"] >= τ
-        df_reliable = df[idxs]
-        pred_binary = df_reliable["pred"] > 0.5
-        true = df[idxs]["true"]
-        accuracy = np.mean(true == pred_binary)
-        num_kept = len(df_reliable)
-        return {
-            "dataset-name": output["dataset_name"],
-            "C": output["C"],
+    # print(num_kept)
+    # print(num_samples - num_kept)
+    # print(num_samples)
+
+    if num_kept == 0 or true.nunique() == 1:
+        auc_roc = np.nan
+    else:
+        auc_roc = roc_auc_score(true, pred)
+
+    return {
+        "accuracy": 100 * accuracy,
+        "frac-kept": 100 * frac_kept,
+        "auc-roc": 100 * auc_roc,
+    }
+
+
+def plot_hists_reliab(df):
+    idxs = df["pred"] > 0.5
+    step = 1 / 100
+    bins = np.arange(0.0, 1.0 + 2 * step, step)
+    fig, ax = plt.subplots()
+    ax.hist(df[idxs]["reliability"], bins=bins)
+    ax.hist(df[~idxs]["reliability"], bins=bins)
+    # ax.scatter(df["reliability"], df["pred"])
+    ax.set_xlabel("Reliability")
+    ax.set_ylabel("Counts")
+    st.pyplot(fig)
+
+
+def get_reliability_metrics(output, func, subset_func):
+    df = pd.DataFrame({"pred": output["pred"], "true": output["true"]})
+    df["reliability"] = df["pred"].map(func)
+    df["pred-binary"] = df["pred"] > 0.5
+
+    plot_hists_reliab(df)
+    pdb.set_trace()
+
+    return [
+        {
+            # "dataset-name": output["dataset_name"],
+            # "C": output["C"],
             "τ": τ,
-            "accuracy": 100 * accuracy,
-            "frac-kept": 100 * num_kept / num_samples,
+            **evaluate_reliability(df, subset_func, τ),
         }
-
-    δ = 0.01
-    return [evaluate_reliability(τ) for τ in np.arange(0.0, 1.0 + δ, δ)]
+        for τ in np.arange(0.0, 1.0 + δ, δ)
+    ]
 
 
 def main():
@@ -96,14 +141,18 @@ def main():
     )
     st.write(df_results)
 
-    select_only_fakes = lambda df: df[df["true"] == 1]
     dfs = [
         pd.DataFrame(
-            get_reliability_metrics(
-                output, entropy_normed, subset_func=select_only_fakes
-            )
+            {
+            "dataset-name": output["dataset_name"],
+            "C": output["C"],
+            **metric,
+            }
         )
         for output in outputs
+        for metric in get_reliability_metrics(
+            output, entropy_normed, subset_func=select_only_fakes
+        )
     ]
     df = pd.concat(dfs)
     df = df.reset_index(drop=True)
@@ -158,8 +207,15 @@ def main():
     fig.savefig("output/icassp/reliability-fake.png")
 
     dfs = [
-        pd.DataFrame(get_reliability_metrics(output, entropy_normed))
+        pd.DataFrame(
+            {
+            "dataset-name": output["dataset_name"],
+            "C": output["C"],
+            **metric,
+            }
+        )
         for output in outputs
+        for metric in get_reliability_metrics(output, entropy_normed, subset_func=None)
     ]
     df = pd.concat(dfs)
     df = df.reset_index(drop=True)
@@ -183,7 +239,7 @@ def main():
     fig.set(xlabel="Fraction of samples kept (%)", ylabel="Accuracy (%)")
     fig.set_titles("{col_name}")
     st.pyplot(fig)
-    
+
     fig.savefig("output/icassp/reliability-all.png")
 
     # fig, axs = plt.subplots(ncols=2, figsize=(10, 5), sharey=True, sharex=True)
