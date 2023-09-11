@@ -25,8 +25,3 @@ def compute_ece(y_true, y_pred, num_bins=15):
 
     p_true, p_pred = calibration_curve(y_true, y_pred, n_bins=num_bins)
     return np.sum(np.abs(p_true - p_pred) * counts) / counts.sum()
-
-
-# TODO
-# - [ ] ECE
-# - [ ] LogLike
