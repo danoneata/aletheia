@@ -18,6 +18,7 @@ def main():
     DATASET_NAME = "asvspoof19"
     SPLITS = ["train", "dev"]
     FEATURE_TYPES = [
+        "wav2vec2-base",
         "wav2vec2-large",
         "wav2vec2-large-lv60",
         "wav2vec2-large-robust",
@@ -25,6 +26,9 @@ def main():
         "wav2vec2-xls-r-300m",
         "wav2vec2-xls-r-1b",
         "wav2vec2-xls-r-2b",
+        "wavlm-base",
+        "wavlm-base-plus",
+        "wavlm-large",
     ]
     NUM_SAMPLES = 4000
     SEEDS = [0, 1, 2]
