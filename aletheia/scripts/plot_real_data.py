@@ -124,8 +124,8 @@ def main():
     df_ss = df_ss.drop(columns=["te-dataset", "num-asvspoof", "seed"])
     df_ss = df_ss.reset_index(drop=True)
     df_ss = df_ss.T
-    st.dataframe(df_ss)
-    st.code(df_ss.to_latex(float_format="%.1f"))
+    # st.dataframe(df_ss)
+    # st.code(df_ss.to_latex(float_format="%.1f"))
 
     DATATASET_SHOW_NAMES = {
         "asvspoof19": "ASVspoof'19",
@@ -157,6 +157,27 @@ def main():
             assert False
 
     df["data-extra-str"] = df["data-extra"].apply(data_to_str)
+
+    # # Draw figure for AI4Trust Paris meeting.
+    # cols = ["data-extra-str", "eer", "ece"]
+    # idxs1 = df["te-dataset"] == "in-the-wild"
+    # idxs2 = df["num-asvspoof"] == 50_760
+    # df_ss = df[idxs1 & idxs2][cols]
+    # df_ss = df_ss.rename(columns={"eer": "EER (%)", "ece": "ECE (%)", "data-extra-str": "Extra data"})
+    # df_ss = df_ss.set_index("Extra data")
+    # df_ss = df_ss.rename(index=DATA_EXTRA_SHOW_NAMES)
+    # fig, ax = plt.subplots(1, 1, figsize=(2.5, 8))
+    # sns.heatmap(
+    #     df_ss,
+    #     ax=ax,
+    #     annot=True,
+    #     fmt=".1f",
+    #     cbar=False,
+    #     square=True,
+    #     cmap="viridis_r",
+    # )
+    # st.pyplot(fig)
+    # pdb.set_trace()
 
     fig, axs = plt.subplots(2, 2, figsize=(6 * 2, 8 * 2), sharex=True, sharey=True)
     axs = iter(axs.flatten())

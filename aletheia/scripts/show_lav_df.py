@@ -33,6 +33,7 @@ def find_entry(name):
 
 
 folder_imgs = BASE_PATH / "PLOTS_lav-df"
+folder_imgs_pred = BASE_PATH / "PLOTS_lav-df_remake"
 fmtbool = lambda b: "✓" if b else "✗"
 
 for path_img in sorted(folder_imgs.iterdir()):
@@ -66,7 +67,7 @@ for path_img in sorted(folder_imgs.iterdir()):
     is_fake_audio = fmtbool(entry_fake["modify_audio"])
 
     st.markdown("## fake id: `{}` → real id: `{}` ◇ fake video: {} · fake audio: {}".format(name, name_real, is_fake_video, is_fake_audio))
-    col0, col1, col2 = st.columns(3)
+    col0, col1, col2, col3 = st.columns(4)
     col0.markdown("real")
     col0.audio(str(path_video_real))
     col0.markdown("{}".format(entry_real["transcript"]))
@@ -75,11 +76,18 @@ for path_img in sorted(folder_imgs.iterdir()):
     col1.audio(str(path_video_fake))
     col1.markdown("{}".format(entry_fake["transcript"]))
     col1.markdown("---")
-    col1.markdown("fake segment: {}".format(fake_word))
+    col1.markdown("fake segment: {} · from {} to {})".format(fake_word, s, e))
     col1.audio(segment_fake.export().read())
 
     col2.markdown("fake · audio plot (by Octav)")
     col2.image(str(path_img))
+
+    try:
+        path_img_pred = folder_imgs_pred / path_img.name
+        col3.markdown("fake · audio plot + predictions (by Octav)")
+        col3.image(str(path_img_pred))
+    except:
+        pass
 
     # st.markdown("{}".format(entry_fake["fake_periods"]))
     st.markdown("---")

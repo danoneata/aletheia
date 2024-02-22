@@ -79,7 +79,7 @@ def load_data():
     with open(path, "r") as f:
         out_is_valid_vlad = json.load(f)
 
-    path = base_path / "scores-vlad.json"
+    path = base_path / "scores-vlad-v2.json"
     with open(path, "r") as f:
         scores_vlad = json.load(f)
 
@@ -89,7 +89,7 @@ def load_data():
     path = base_path / "output-marian-is-valid-sent.txt"
     out_is_valid_marian = read_file(str(path), lambda x: x.split(":")[0] == "TRUE")
 
-    path = base_path / "scores-marian.json"
+    path = base_path / "scores-marian-v2.json"
     with open(path, "r") as f:
         scores_marian = json.load(f)
 
@@ -173,6 +173,17 @@ def main():
         )
 
     data = load_data()
+
+    # fake_is_better = [
+    #     data1[0]["log-loss"] > data1[-1]["log-loss"]
+    #     for data1 in data
+    #     if data1[0]["log-loss"] is not None
+    #     and data1[-1]["log-loss"] is not None
+    # ]
+    # import numpy as np
+    # st.write(len(fake_is_better))
+    # st.write(np.sum(fake_is_better))
+    # st.write(np.mean(fake_is_better))
 
     if show_option == "random":
         random.shuffle(data)

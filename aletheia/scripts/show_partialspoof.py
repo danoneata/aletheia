@@ -245,7 +245,7 @@ def main():
 
             idxs = np.arange(t, t + e - s)
             axs[1].vlines(t, -1.1, 1.1, color="gray", linestyle="dashed")
-            axs[2].vlines(t, -1.1, 1.1, color="gray", linestyle="dashed")
+            # axs[2].vlines(t, -1.1, 1.1, color="gray", linestyle="dashed")
             axs[1].plot(idxs, audio_seg[s: e] + δ * i)
 
         # axs[1].step(x, y, linewidth=2, color="k")
@@ -267,11 +267,11 @@ def main():
         if not filename.startswith("CON_"):
             continue
 
-        # carrier = concatenate_log[filename][0]["carrier"]
-        # label_carrier = dataset_src.get_label(src_filename_to_index[carrier])
+        carrier = concatenate_log[filename][0]["carrier"]
+        label_carrier = dataset_src.get_label(src_filename_to_index[carrier])
 
-        # if label_carrier != "real":
-        #     continue
+        if label_carrier != "real":
+            continue
 
         # st.write(dataset.data[i])
         # st.write(dataset.segment_labels[path.stem])

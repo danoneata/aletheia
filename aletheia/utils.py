@@ -1,6 +1,8 @@
 from typing import Callable, List, TypeVar, Tuple
 import json
 import os
+import pickle
+
 import numpy as np
 
 
@@ -41,4 +43,15 @@ def cache_json(path, func, *args, **kwargs):
         result = func(*args, **kwargs)
         with open(path, "w") as f:
             json.dump(result, f)
+        return result
+
+
+def cache_pickle(path, func, *args, **kwargs):
+    try:
+        with open(path, "rb") as f:
+            return pickle.load(f)
+    except FileNotFoundError:
+        result = func(*args, **kwargs)
+        with open(path, "wb") as f:
+            pickle.dump(result, f)
         return result
