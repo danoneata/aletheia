@@ -1,4 +1,5 @@
 import pdb
+from typing import Dict, List
 
 import numpy as np
 
@@ -33,15 +34,26 @@ def load_data_multi(datasets):
     return X, y
 
 
-def get_te_datasets(feature_type):
+def get_te_datasets(feature_type) -> List[Dict]:
+    dataset_to_subsets = {
+        "asvspoof19": ["asvspoof19"],
+        "in-the-wild": ["in-the-wild"],
+        "timit-tts": ["timit-tts-clean", "timit-tts-dtw-aug"],
+    }
     return [
         {
-            "dataset_name": dataset,
-            "split": "eval",
-            "feature_type": feature_type,
-            "subset": "all",
+            "dataset_name": name,
+            "subsets": [
+                {
+                    "dataset_name": s,
+                    "split": "eval",
+                    "feature_type": feature_type,
+                    "subset": "all",
+                }
+                for s in subset
+            ],
         }
-        for dataset in ["asvspoof19", "in-the-wild"]
+        for name, subset in dataset_to_subsets.items()
     ]
 
 
@@ -54,8 +66,8 @@ def get_feature_type(tr_datasets):
 
 
 def predict(tr_datasets, C=1e6, verbose=False):
-    def predict1(model, te_dataset):
-        X_te, y_te = load_data_npz(**te_dataset)
+    def predict1(model, te_datasets):
+        X_te, y_te = load_data_multi(te_datasets)
         pred = model.predict_proba(X_te)[:, 1]
         return {
             "true": y_te.tolist(),
@@ -69,7 +81,7 @@ def predict(tr_datasets, C=1e6, verbose=False):
 
     outputs = get_te_datasets(get_feature_type(tr_datasets))
     for i, output in enumerate(outputs):
-        outputs[i] = {**output, **predict1(model, output)}
+        outputs[i] = {**output, **predict1(model, output["subsets"])}
 
     return outputs
 

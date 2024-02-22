@@ -74,6 +74,7 @@ def main():
     DATATASET_SHOW_NAMES = {
         "asvspoof19": "ASVspoof'19",
         "in-the-wild": "In the Wild",
+        "timit-tts": "TIMIT-TTS",
     }
     df = df.replace({"te-dataset": DATATASET_SHOW_NAMES})
     df = df.rename(columns={
@@ -115,7 +116,7 @@ def main():
 
     fig.tight_layout()
     st.pyplot(fig)
-    fig.savefig("output/icassp/num-training-samples.png")
+    # fig.savefig("output/icassp/num-training-samples.png")
 
 
 if __name__ == "__main__":
