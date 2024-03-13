@@ -84,8 +84,8 @@ def get_reliability_metrics(output, func, subset_func):
     df["reliability"] = df["pred"].map(func)
     df["pred-binary"] = df["pred"] > 0.5
 
-    plot_hists_reliab(df)
-    pdb.set_trace()
+    # plot_hists_reliab(df)
+    # pdb.set_trace()
 
     return [
         {

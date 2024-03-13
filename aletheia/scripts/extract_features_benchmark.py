@@ -38,12 +38,18 @@ def main(feature_type: str):
             "audio-length": len(audio) / SAMPLING_RATE,
             "cuda-memory-reserved": torch.cuda.memory_reserved() / 2 ** 20,
             "cuda-max-memory-reserved": torch.cuda.max_memory_reserved() / 2 ** 20,
+            "i": i,
+            "feature-type": feature_type,
         }
 
 
     results = [benchmark(i) for i in tqdm(range(64))]
     df = pd.DataFrame(results)
     print(df.describe())
+
+    torch.cuda.empty_cache()
+
+    return results
 
 
 if __name__ == "__main__":

@@ -1,6 +1,4 @@
-# Aletheia ICASSP24
-
-Code for our ICASSP'24 submission.
+# Aletheia 
 
 This project addresses the task deepfake audio detection.
 The name of the project, "Alteheia", comes from Greek and means "unconcealedness", "disclosure", "revealing"; see [the corresponding Wikipedia entry](https://en.wikipedia.org/wiki/Aletheia) for more information.
@@ -40,7 +38,7 @@ Table 2 in paper:
 python aletheia/scripts/evaluate_feature_type.py
 ```
 
-Figure 1 in  paper:
+Figure 1 in paper:
 ```bash
 streamlit run aletheia/scripts/plot_num_training_samples.py
 ```

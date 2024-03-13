@@ -1,5 +1,7 @@
 import pdb
+import random
 from typing import Dict, List
+from pathlib import Path
 
 import numpy as np
 
@@ -9,8 +11,16 @@ from aletheia.data import DATASETS
 from aletheia.metrics import compute_eer, compute_ece
 
 
+DATA_DIR = Path("/mnt/student-share/projects/2024-interspeech")
+
+
 def load_data_npz(dataset_name, split, feature_type, subset, systems=None):
-    path = f"output/features/{dataset_name}-{split}-{feature_type}-{subset}.h5.npz"
+    path = (
+        DATA_DIR
+        / "output"
+        / "features"
+        / f"{dataset_name}-{split}-{feature_type}-{subset}.h5.npz"
+    )
     with np.load(path) as f:
         X = f["X"]
         y = f["y"]
@@ -38,7 +48,9 @@ def get_te_datasets(feature_type) -> List[Dict]:
     dataset_to_subsets = {
         "asvspoof19": ["asvspoof19"],
         "in-the-wild": ["in-the-wild"],
-        "timit-tts": ["timit-tts-clean", "timit-tts-dtw-aug"],
+        "timit-tts": ["timit-tts-clean"],
+        "fake-or-real": ["FakeOrReal"],
+        # "timit-tts": ["timit-tts-clean", "timit-tts-dtw-aug"],
     }
     return [
         {
@@ -65,7 +77,9 @@ def get_feature_type(tr_datasets):
     return feature_types[0]
 
 
-def predict(tr_datasets, C=1e6, verbose=False):
+def predict(tr_datasets, seed=42, C=1e6, verbose=False):
+    random.seed(seed)
+
     def predict1(model, te_datasets):
         X_te, y_te = load_data_multi(te_datasets)
         pred = model.predict_proba(X_te)[:, 1]
@@ -76,8 +90,20 @@ def predict(tr_datasets, C=1e6, verbose=False):
 
     X_tr, y_tr = load_data_multi(tr_datasets)
 
-    model = LogisticRegression(C=C, max_iter=5_000, random_state=42, verbose=verbose)
+    # idxs = random.choices(range(len(X_tr)), k=len(X_tr))
+    # X_tr = X_tr[idxs]
+    # y_tr = y_tr[idxs]
+
+    model = LogisticRegression(C=C, max_iter=5_000, random_state=seed, verbose=verbose)
+
+    from time import time
+    time_s = time()
     model.fit(X_tr, y_tr)
+    time_e = time()
+
+    print("Shape", X_tr.shape)
+    print(f"Time: {time_e - time_s:.2f}s")
+    print()
 
     outputs = get_te_datasets(get_feature_type(tr_datasets))
     for i, output in enumerate(outputs):
@@ -99,5 +125,8 @@ def evaluate1(true, pred, dataset_name, verbose=False, **_):
     return results
 
 
-def evaluate(tr_datasets, verbose):
-    return [evaluate1(**d, verbose=verbose) for d in predict(tr_datasets)]
+def evaluate(tr_datasets, *, seed, C, verbose):
+    return [
+        evaluate1(**d, verbose=verbose)
+        for d in predict(tr_datasets, seed=seed, C=C, verbose=verbose)
+    ]

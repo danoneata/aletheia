@@ -55,3 +55,13 @@ def cache_pickle(path, func, *args, **kwargs):
         with open(path, "wb") as f:
             pickle.dump(result, f)
         return result
+
+
+def cache_pandas(path, func, *args, **kwargs):
+    import pandas as pd
+    try:
+        return pd.read_csv(path)
+    except FileNotFoundError:
+        result = func(*args, **kwargs)
+        result.to_csv(path)
+        return result

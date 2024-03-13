@@ -11,20 +11,24 @@ from aletheia.utils import cache_json
 
 
 # sns.set_context("talk")
-sns.set_theme(context="talk", font="Arial")
+# sns.set_theme(context="talk", font="Arial")
+sns.set_theme(style="whitegrid", context="talk", font="Arial", font_scale=1.0)
 
 
 def main():
     DATASET_NAME = "asvspoof19"
     SPLITS = ["train", "dev"]
     FEATURE_TYPE = "wav2vec2-xls-r-2b"
+    C = 1e3
 
-    NUM_SAMPLES = [1000, 2000, 4000, 8000, 16000]
+    NUM_SAMPLES = [1000, 2000, 4000, 8000, 16000, "all"]
     SEEDS = [0, 1, 2]
-    SUBSETS = [f"{num}-{seed}" for seed in SEEDS for num in NUM_SAMPLES]
-    SUBSETS.append("all")
 
-    def get_tr_dataset(split, subset):
+    def get_tr_dataset(split, num, seed):
+        if num == "all":
+            subset = "all"
+        else:
+            subset = f"{num}-{seed}"
         return {
             "dataset_name": DATASET_NAME,
             "split": split,
@@ -32,17 +36,16 @@ def main():
             "subset": subset,
         }
 
-    def get_tr_datasets(subset):
-        return [get_tr_dataset(split, subset) for split in SPLITS]
+    def get_tr_datasets(num, seed):
+        return [get_tr_dataset(split, num, seed) for split in SPLITS]
 
-    def get_cache_path(subset):
-        return f"output/results/num-training-samples-{subset}.json"
+    def get_cache_path(num, seed):
+        return f"output/results/num-training-samples-{num}-{seed}.json"
 
-    def get_num(subset):
-        if subset == "all":
+    def get_num(num):
+        if num == "all":
             return 25112
         else:
-            num, _ = subset.split("-")
             return int(num)
 
     def get_seed(subset):
@@ -56,15 +59,18 @@ def main():
         merge(
             result,
             {
-                "num": len(SPLITS) * get_num(subset),
-                "seed": get_seed(subset),
+                "num": len(SPLITS) * get_num(num),
+                "seed": seed,
             },
         )
-        for subset in SUBSETS
+        for num in NUM_SAMPLES
+        for seed in SEEDS
         for result in cache_json(
-            get_cache_path(subset),
+            get_cache_path(num, seed),
             evaluate,
-            get_tr_datasets(subset),
+            get_tr_datasets(num, seed),
+            seed=seed,
+            C=C,
             verbose=True,
         )
     ]
@@ -75,6 +81,7 @@ def main():
         "asvspoof19": "ASVspoof'19",
         "in-the-wild": "In the Wild",
         "timit-tts": "TIMIT-TTS",
+        "fake-or-real": "FakeOrReal",
     }
     df = df.replace({"te-dataset": DATATASET_SHOW_NAMES})
     df = df.rename(columns={
@@ -110,13 +117,13 @@ def main():
         errorbar="sd",
         ax=axs[1],
     )
-    sns.move_legend(axs[1], "upper left", bbox_to_anchor=(1.0, 1.0))
+    sns.move_legend(axs[1], "upper left", bbox_to_anchor=(1.0, 1.0), frameon=False)
     # fig.set(xlabel="Number of training samples", ylabel="EER (%)")
     # fig.set_titles("{col_name}")
 
     fig.tight_layout()
     st.pyplot(fig)
-    # fig.savefig("output/icassp/num-training-samples.png")
+    fig.savefig("output/icassp/num-training-samples.pdf")
 
 
 if __name__ == "__main__":

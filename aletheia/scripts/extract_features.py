@@ -123,10 +123,15 @@ def main(
 
     with h5py.File(path_hdf5, "a") as f:
         for i in tqdm(indices):
+            filename = dataset.get_file_name(i)
             try:
-                group = f.create_group(dataset.get_file_name(i))
+                group = f.create_group(filename)
             except ValueError:
-                continue
+                group = f[filename]
+                if "feature" in group:
+                    continue
+                else:
+                    pass
             feature = extract1(dataset.load_audio(i))
             label_np = np.array(dataset.get_label(i) == "fake", dtype=np.int32)
             index_np = np.array(i, dtype=np.int32)

@@ -8,7 +8,8 @@ import streamlit as st
 from matplotlib import pyplot as plt
 
 
-sns.set_theme(context="talk", font="Arial")
+# sns.set_theme(context="talk", font="Arial")
+sns.set_theme(style="whitegrid", context="talk", font="Arial", font_scale=1.0)
 
 from aletheia.scripts.evaluate_reliability import (
     δ,
@@ -158,7 +159,7 @@ def load_salvi_orig():
         df = output.copy()
         df["pred-binary"] = df["pred"] > 0.5
 
-        plot_hists_reliab(df)
+        # plot_hists_reliab(df)
 
         return [
             {
@@ -184,6 +185,14 @@ def load_salvi_orig():
         ]
     )
 
+def load_data():
+    df1 = load_ours()
+    df2 = load_salvi_orig()
+    # df3 = load_salvi()
+    # df = pd.concat([df1, df2, df3])
+    df = pd.concat([df1, df2])
+    return df
+
 
 def main():
     # results = [
@@ -196,11 +205,8 @@ def main():
     # ]
     # st.write(results)
 
-    df1 = load_ours()
-    df2 = load_salvi_orig()
-    # df3 = load_salvi()
-    # df = pd.concat([df1, df2, df3])
-    df = pd.concat([df1, df2])
+    from aletheia.utils import cache_pandas
+    df = cache_pandas("/tmp/o.csv", load_data)
 
     st.write(df)
     df = df.drop("auc-roc", axis=1)
@@ -214,7 +220,7 @@ def main():
     METHOD_SHOW_NAMES = {
         "ours": "Ours",
         "salvi-orig": "Salvi et al.",
-        "salvi": "Salvi et al. (ours)",
+        # "salvi": "Salvi et al. (ours)",
     }
 
     df = df.replace(
@@ -229,12 +235,64 @@ def main():
         col="dataset-name",
         hue="Method",
         kind="line",
+        # marker="o",
     )
-    fig.set(xlabel="Fraction of samples kept (%)", ylabel="Accuracy (%)")
+    fig.set(
+        xlabel="Fraction of samples kept (%)",
+        ylabel="Accuracy (%)",
+        xlim=(0, 100),
+        ylim=(40, 100),
+    )
     fig.set_titles("{col_name}")
+
+    palette = sns.color_palette()
+    COLORS = {
+        "Ours": palette[0],
+        "Salvi et al.": palette[3],
+    }
+
+    TAUS = {
+        "min": {
+            "Ours": 0,
+            "Salvi et al.": 0,
+        },
+        "max": {
+            "Ours": 1,
+            "Salvi et al.": 0.99,
+        },
+    }
+
+    for ax in fig.axes.flat:
+        for tau in "min max".split():
+            for method in METHOD_SHOW_NAMES.values():
+                τ = TAUS[tau][method] 
+                dataset = ax.title.get_text()
+                idxs1 = df["dataset-name"] == dataset
+                idxs2 = df["τ"] == τ
+                idxs3 = df["Method"] == method
+                df1 = df[idxs1 & idxs2 & idxs3]
+                # pdb.set_trace()
+                try:
+                    x = df1["frac-kept"].item()
+                    y = df1["accuracy"].item()
+                    ax.scatter([x], [y], marker="*", color=COLORS[method])
+                    ax.text(
+                        x,
+                        y - 2,
+                        f"τ = {τ}",
+                        # f"{τ}",
+                        ha="center",
+                        va="top",
+                    )
+                except:
+                    pass
+
+    fig.tight_layout()
+    # plt.subplots_adjust(hspace=0.4, wspace=0.4)
+
     st.pyplot(fig)
 
-    fig.savefig("output/icassp/reliability-ours-vs-salvi.png")
+    fig.savefig("output/icassp/reliability-ours-vs-salvi-2.pdf")
 
 
 if __name__ == "__main__":
