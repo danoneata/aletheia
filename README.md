@@ -1,7 +1,12 @@
 # Aletheia 
 
 This project addresses the task deepfake audio detection.
-The name of the project, "Alteheia", comes from Greek and means "unconcealedness", "disclosure", "revealing"; see [the corresponding Wikipedia entry](https://en.wikipedia.org/wiki/Aletheia) for more information.
+It is the code associated to the paper:
+
+> Oneata, D., Stan, A., Pascu, O., Oneata, E., & Cucu, H. (2023).
+> [Towards generalisable and calibrated synthetic speech detection with self-supervised representations.](https://arxiv.org/abs/2309.05384)
+> arXiv preprint arXiv:2309.05384.
+
 
 ## Set up
 
@@ -47,3 +52,8 @@ Figure 2 (uncertainty estimation and reliability) in paper:
 ```bash
 streamlit run aletheia/scripts/evaluate_reliability_ours_vs_salvi.py
 ```
+
+## Etymology
+
+The name of the project, "Alteheia", comes from Greek and means "unconcealedness", "disclosure", "revealing";
+see [the corresponding Wikipedia entry](https://en.wikipedia.org/wiki/Aletheia) for more information.
