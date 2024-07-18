@@ -78,6 +78,7 @@ def compare_classifiers():
 
 def show_results():
     with st.sidebar:
+        to_use_nca = st.checkbox("use NCA", value=True)
         K = st.number_input("number of neighbours", value=5)
         te_dataset_name = st.selectbox("test dataset", ["asvspoof19", "in-the-wild"])
         st.markdown("---")
@@ -103,10 +104,15 @@ def show_results():
         subset=nca_subset,
     )
 
-    X_te_1 = nca.transform(X_te)
+    if to_use_nca:
+        X_tr_1 = nca.transform(X_tr)
+        X_te_1 = nca.transform(X_te)
+    else:
+        X_tr_1 = X_tr
+        X_te_1 = X_te
 
     model = KNeighborsClassifier(n_neighbors=K, weights="distance")
-    model.fit(nca.transform(X_tr), y_tr)
+    model.fit(X_tr_1, y_tr)
     y_pred = model.predict_proba(X_te_1)[:, 1]
     tr_dists, tr_idxs = model.kneighbors(X_te_1)
 
