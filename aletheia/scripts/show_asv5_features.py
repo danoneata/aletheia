@@ -84,8 +84,11 @@ data = {
     for a, data2 in data1.items()
     if a != "bonafide"
 }
-data["bonafide"] = np.hstack(
-    [data_orig["train"]["bonafide"], data_orig["dev"]["bonafide"]]
+data["bonafide"] = np.vstack(
+    [
+        data_orig["train"]["bonafide"],
+        data_orig["dev"]["bonafide"],
+    ]
 )
 
 
@@ -114,9 +117,11 @@ eers = [
     for feature in FEATS_ALL
 ]
 df = pd.DataFrame(eers).pivot("attack", "feature", "eer")
+# df = df[df.mean(axis=0).sort_values().index[:25]]
 
 S = 12
-ratio = num_attacks / len(FEATS_ALL)
+numf, numa = df.shape
+ratio = numa / numf
 fig, ax = plt.subplots(1, 1, figsize=(S, ratio * S))
 sns.heatmap(
     df,
@@ -135,7 +140,11 @@ num_real = len(data["bonafide"])
 num_fake = sum(len(data[a]) for a in ATTACKS[:num_attacks])
 
 st.markdown("## EER heatmap for each attack–feature combination")
-st.markdown("EER is computed by using only the feature to score the samples and then taking the minimum of the EERs obtained by setting either (i) fakes to be 1 and reals to be 0 or (ii) vice versa. I've used the entire data to compute this EER ({} bonafide samples and {} spoofed samples).".format(num_real, num_fake))
+st.markdown(
+    "EER is computed by using only the feature to score the samples and then taking the minimum of the EERs obtained by setting either (i) fakes to be 1 and reals to be 0 or (ii) vice versa. I've used the entire data to compute this EER ({} bonafide samples and {} spoofed samples).".format(
+        num_real, num_fake
+    )
+)
 st.pyplot(fig)
 st.markdown("---")
 
@@ -160,14 +169,22 @@ for r, f in enumerate(FEATS):
 
         ff = int(f[1:])
 
-        df = {
-            "fake": data[a][:, ff],
-            "real": data["bonafide"][:, ff],
-            # "real": data_orig["train"]["bonafide"][:, ff],
-            # "real-tr": data_orig["train"]["bonafide"][:, ff],
-            # "real-va": data_orig["dev"]["bonafide"][:, ff],
-        }
-        df = pd.DataFrame(df)
+        # df = {
+        #     "fake": data[a][:, ff],
+        #     "real": data["bonafide"][:, ff],
+        #     # "real": data_orig["train"]["bonafide"][:, ff],
+        #     # "real-tr": data_orig["train"]["bonafide"][:, ff],
+        #     # "real-va": data_orig["dev"]["bonafide"][:, ff],
+        # }
+        fake = [
+            {"label": "fake", "value": x}
+            for x in data[a][:, ff]
+        ]
+        real = [
+            {"label": "real", "value": x}
+            for x in data["bonafide"][:, ff]
+        ]
+        df = pd.DataFrame(fake + real)
 
         eer1, eer2 = compute_eers(data, a, f)
         eer_min = min(eer1, eer2)
@@ -175,8 +192,9 @@ for r, f in enumerate(FEATS):
 
         ax = axs[0, c]
         legend = True if c == num_attacks - 1 else False
-        sns.kdeplot(df, ax=ax, legend=legend, bw_adjust=0.1)
+        sns.kdeplot(df, x="value", hue="label", ax=ax, legend=legend, bw_adjust=0.1)
         ax.set_title("{}\n{:.1f} · {:.1f}".format(a, eer_min, eer_max))
+        ax.set_xlabel("")
 
         if c == num_attacks - 1:
             sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))

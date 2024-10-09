@@ -1,4 +1,6 @@
+from collections import defaultdict
 from typing import Callable, List, TypeVar, Tuple
+
 import json
 import os
 import pickle
@@ -65,3 +67,16 @@ def cache_pandas(path, func, *args, **kwargs):
         result = func(*args, **kwargs)
         result.to_csv(path)
         return result
+
+
+class multimap(defaultdict):
+    def __init__(self, pairs, symmetric=False):
+        """Given (key, val) pairs, return {key: [val, ...], ...}.
+        If `symmetric` is True, treat (key, val) as (key, val) plus (val, key)."""
+        self.default_factory = list
+        for key, val in pairs:
+            self[key].append(val)
+            if symmetric:
+                self[val].append(key)
+
+
